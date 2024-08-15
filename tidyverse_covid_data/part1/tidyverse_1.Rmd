@@ -36,6 +36,8 @@ From the NYT github repo re. these data, they asked the question: "How often do 
 It looks like for all the counties are represented with a 5-digit FIPS code, which is not exactly ideal because we don't know what these numbers mean. We'll get the names in a moment by combining these data with another file that also has these FIPS codes AND county names. We can thus match these data tables based on shared FIPS codes to combine them.
 
 When I download other peoples data, I typically like to do many sanity checks on them to make sure they make sense. Even if you trust your source, it's always good to verify. One question that immediately came to my mind is whether these values sum to 1 for each row, as it seems like they should. We can quick check this for a few rows using the bracket notation to access particular parts of the table
+row 1 and columns 2:6 
+for thier data set the sum should be 1 because it is proportion,,, that is the check
 ```{r}
 sum(mask_use[1,2:6])
 sum(mask_use[2,2:6])
@@ -56,9 +58,11 @@ Also, see [here](https://en.wikipedia.org/wiki/Wide_and_narrow_data) for another
 
 ```{r}
 mask_use_long <- pivot_longer(data = mask_use, 
-                              cols = -COUNTYFP, 
+                              cols = -COUNTYFP, # because we want all other cols, the only one we do not want is COUNTRY
                               names_to = "MaskUseResponse", 
                               values_to = "MaskUseProportion")
+
+# and pivot_wider to change it back to wide format
 ```
 
 As you can see, the tibble is much longer and each county is represented by 5 rows, once for each value of the MaskUseResponse categorical variable. If we wanted to go from this long format back to wide format, we could use the spread() function, or its newer version pivot_wider(), to spread out these two columns into the 5 original columns, but we will not do this today.
@@ -70,8 +74,8 @@ Let's say right after we convert these data to long format, we want to polish it
 ```{r, include=FALSE}
 # do each operation on a separate line
 mask_use_long <- pivot_longer(data = mask_use, cols = -COUNTYFP, names_to = "MaskUseResponse", values_to = "MaskUseProportion")
-mask_use_long <- rename(mask_use_long, "fips" = COUNTYFP)
-mask_use_long <- arrange(mask_use_long, "fips")
+mask_use_long <- rename(mask_use_long, "fips" = COUNTYFP) # renaming the column
+mask_use_long <- arrange(mask_use_long, "fips") # arrange the new column
 
 # most dense: do all operations on a single line
 mask_use_long <- pivot_longer(data = arrange(rename(mask_use, "fips" = COUNTYFP), "fips"), cols = -"fips", names_to = "MaskUseResponse", values_to = "MaskUseProportion")
@@ -88,7 +92,9 @@ mask_use_long <- mask_use %>%
 In addition to the mask data, let's also load in data on covid19 case counts across the US, also supplied by the NYT, and combine it with our mask use data. Unlike the previous data that we loaded in from our local file system, these data we will directly download because they are so large. This will also show how you can specify web addresses instead of file names for read_delim(). This file is also comma separated, so we will let read_delim() know this.
 ```{r, include=FALSE}
 cases <- read_delim(file="https://github.com/nytimes/covid-19-data/raw/ccc8c7988a089fed287a9005e5335d8716d8db57/us-counties.csv", delim=",") %>%
-  arrange(fips)
+  arrange(fips) #store everything in cases
+
+# to remove in R: rm()
 ```
 
 This is a lot of data. For some 3 thousand counties, there's an estimate of cumulative covid19 cases and deaths for each day since late January (it's now early August). For now, let's just look at the most recent date: 2020-08-03 in the date column. We can use the filter() function to filter our data table by row
@@ -135,6 +141,8 @@ Another thing you will notice is that there are only one cases and deaths value 
 
 Since these data are all from the same date, we don't need this column anymore as it's not informative. Also, we can get rid of the county FIPS code column since we only used that information to combine the cases data and the mask data. Now that we've done that, we don't need that information either
 
+# filter =====> selects rows
+# select =====> selects cols
 ```{r, include=FALSE}
 cases_masks <- cases_masks %>% dplyr::select(-date, -fips)
 ```
